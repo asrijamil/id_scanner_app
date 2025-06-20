@@ -100,20 +100,24 @@
         /* All other screens will have hidden class in HTML */
 
         #camera-screen .camera-container {
-            width: 100%;
-            height: 250px; /* Base height, adjust if needed */
+            width: 100%; /* Lebar bekas kamera */
+            padding-bottom: calc(100% * (54 / 86)); /* Nisbah aspek MyKad: tinggi/lebar */
+            height: 0; /* Set height to 0 when using padding-bottom */
+            position: relative; /* Penting untuk kedudukan video mutlak */
             background-color: #e2e8f0;
             border-radius: 1rem;
-            display: flex;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            display: flex; /* Untuk memusatkan scan-box jika video belum dimuat */
             justify-content: center;
             align-items: center;
             color: #64748b;
             font-size: 1.25rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
         }
         #camera-screen video {
+            position: absolute; /* Tetapkan kedudukan mutlak untuk mengisi bekas */
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover; /* Menyesuaikan video ke dalam bekas */
@@ -429,15 +433,13 @@
             console.log(`Navigasi dipanggil ke: ${screenId}`);
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden'); // Sembunyikan semua skrin
-                // Kekalkan display none secara inline untuk pastikan ia tersembunyi sepenuhnya
-                screen.style.display = 'none'; 
+                screen.style.display = 'none'; // Tambahan: Pastikan inline display none
                 console.log(`Menyembunyikan: ${screen.id}`);
             });
             const targetScreen = document.getElementById(screenId);
             if (targetScreen) {
                 targetScreen.classList.remove('hidden'); // Paparkan skrin sasaran
-                // Tetapkan display flex secara inline untuk layout yang betul
-                targetScreen.style.display = 'flex'; 
+                targetScreen.style.display = 'flex'; // Pastikan display flex untuk layout yang betul
                 console.log(`Memaparkan skrin: ${screenId}`);
             } else {
                 console.error(`Skrin sasaran dengan ID "${screenId}" tidak ditemui.`);
@@ -699,7 +701,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                const result = response.json();
 
                 if (result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
