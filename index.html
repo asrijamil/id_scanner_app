@@ -683,7 +683,7 @@
                 console.log("Starting image pre-processing for OCR...");
                 let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                 let data = imageData.data;
-                let threshold = 180; // Ambang yang ditala
+                let threshold = 100; // Ambang yang ditala semula untuk membuat imej lebih terang
 
                 for (let i = 0; i < data.length; i += 4) {
                     let r = data[i];
