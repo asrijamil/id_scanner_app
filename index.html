@@ -127,41 +127,30 @@
             display: none; /* Kanvas tersembunyi, hanya untuk menangkap imej */
         }
         #camera-screen .scan-box {
-            position: absolute;
+            position: absolute; /* Untuk memusatkan kotak imbasan */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 80%; /* Lebar kotak imbasan */
             padding-bottom: calc(80% * (54 / 86)); /* Nisbah aspek MyKad: tinggi/lebar */
             height: 0; /* Set height to 0 when using padding-bottom */
-            /* border: 3px dashed #ff7f50; */ /* Dikeluarkan */
             border-radius: 0.5rem;
-            /* background-color: rgba(255, 127, 80, 0.1); */ /* Dikeluarkan */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
             display: flex; /* Untuk memusatkan teks di dalamnya */
             justify-content: center;
             align-items: center;
+            z-index: 10; /* Pastikan ia di atas video */
         }
-        /* Mengeluarkan ::before kerana teks sudah dialih keluar */
-        /* #camera-screen .scan-box::before {
-            content: '';
-            display: inline-block;
-            vertical-align: middle;
-            padding-bottom: 62.79%;
-        } */
-        #camera-screen .scan-box span { /* Gaya untuk teks yang dipusatkan di dalam scan-box */
-            /* Removed absolute positioning here as flexbox handles it */
-            /* position: absolute; */
-            /* top: 50%; */
-            /* left: 50%; */
-            /* transform: translate(-50%, -50%); */
+        #camera-screen .scan-box span.scan-box-text { /* Gaya untuk teks yang dipusatkan di dalam scan-box */
             white-space: normal; /* Benarkan teks membalut */
             text-align: center; /* Pusatkan teks */
             color: #ffffff; /* Warna teks untuk kelihatan pada video */
-            font-size: 1.2rem; /* Saiz fon yang sedikit lebih besar */
+            font-size: 1.3rem; /* Saiz fon yang sedikit lebih besar */
             font-weight: bold;
-            background-color: rgba(0, 0, 0, 0.5); /* Latar belakang separa telus untuk keterlihatan */
+            background-color: rgba(0, 0, 0, 0.6); /* Latar belakang separa telus yang lebih gelap untuk keterlihatan */
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            z-index: 10; /* Pastikan teks di atas video */
             width: 90%; /* Benarkan teks menggunakan kebanyakan lebar kotak imbasan */
             box-sizing: border-box; /* Sertakan padding dalam lebar */
         }
@@ -336,7 +325,6 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <!-- Kotak imbasan kosong, hanya untuk nisbah aspek dan overlay video -->
                         <span class="scan-box-text">Sila letakkan MyKad di dalam kotak</span>
                     </div>
                 </div>
