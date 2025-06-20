@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imbas MyKad</title>
+    <!-- Memuatkan Tailwind CSS untuk penggayaan mudah -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Menggunakan font Inter untuk keseluruhan aplikasi */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Warna latar belakang lembut */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Memastikan aplikasi mengisi ketinggian skrin */
+            margin: 0;
+            padding: 1rem; /* Padding untuk responsif pada skrin kecil */
+            box-sizing: border-box;
+        }
+        /* Menggaya kad utama aplikasi */
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Sudut bulat */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Bayangan lembut */
+            overflow: hidden;
+            width: 90%; /* Lebar responsif */
+            max-width: 400px; /* Lebar maksimum */
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            min-height: 550px; /* Ketinggian minimum untuk menyerupai MyKad */
+            border: 4px solid #ff7f50; /* Warna jingga yang cerah */
+        }
+        /* Menggaya header MyKad */
+        .header {
+            background-color: #ff7f50; /* Warna jingga yang cerah */
+            color: #ffffff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Gaya butang umum */
+        .app-button {
+            background-image: linear-gradient(to right, #ff8c00, #ff4500); /* Gradien jingga-merah */
+            color: #ffffff;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem; /* Sudut bulat */
+            font-weight: bold;
+            font-size: 1.25rem;
+            text-decoration: none;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(255, 140, 0, 0.4); /* Bayangan butang */
+            width: 80%; /* Lebar butang responsif */
+            cursor: pointer;
+            border: none;
+            outline: none;
+        }
+        .app-button:hover {
+            transform: translateY(-3px); /* Kesan hover sedikit naik */
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.6);
+        }
+        .app-button:active {
+            transform: translateY(0); /* Kesan aktif */
+            box-shadow: 0 3px 10px rgba(255, 140, 0, 0.4);
+        }
+
+        /* Gaya khusus untuk butang kecil (Simpan, Semula) */
+        .small-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            width: 48%; /* For two buttons side-by-side */
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        .small-button.secondary {
+            background-image: linear-gradient(to right, #6b7280, #4b5563); /* Grey gradient */
+            box-shadow: 0 3px 10px rgba(75, 85, 99, 0.4);
+        }
+        .small-button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(75, 85, 99, 0.6);
+        }
+
+        /* Gaya untuk skrin */
+        .screen {
+            display: none; /* Hide all screens by default */
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #welcome-screen {
+            display: flex; /* Display welcome screen initially */
+        }
+        #camera-screen .camera-container {
+            width: 100%;
+            height: 250px;
+            background-color: #e2e8f0;
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #64748b;
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        #camera-screen video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Menyesuaikan video ke dalam bekas */
+            border-radius: 1rem;
+            transform: scaleX(-1); /* Balikkan video untuk efek cermin */
+        }
+        #camera-screen canvas {
+            display: none; /* Kanvas tersembunyi, hanya untuk menangkap imej */
+        }
+        #camera-screen .scan-box {
+            position: absolute;
+            width: 80%;
+            height: 150px;
+            border: 3px dashed #ff7f50;
+            border-radius: 0.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1rem;
+            color: #ff7f50;
+            background-color: rgba(255, 127, 80, 0.1); /* Scan box background */
+            pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
+        }
+
+        #info-screen .input-group {
+            width: 100%;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        #info-screen .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+        #info-screen .input-group input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            color: #374151;
+            box-sizing: border-box; /* Ensure padding doesn't add to width */
+        }
+        #info-screen .mykad-image-display {
+            width: 100%;
+            height: 180px; /* MyKad image display height */
+            background-color: #e2e8f0;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #64748b;
+            font-size: 1.25rem;
+            overflow: hidden; /* Pastikan imej tidak melimpah */
+        }
+        #info-screen .mykad-image-display img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Menyesuaikan imej ke dalam bekas */
+        }
+        /* Gaya untuk output ringkasan AI */
+        #summary-output {
+            background-color: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            color: #374151;
+            font-size: 0.95rem;
+            min-height: 80px; /* Allow it to grow if content is long */
+            text-align: left;
+            overflow-y: auto; /* For long content */
+            max-height: 150px; /* Max height before scrolling */
+        }
+        /* Gaya untuk spinner loading */
+        .loading-spinner {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #ff7f50; /* Orange */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: none; /* Hidden by default */
+            margin: 0 auto 10px auto; /* Center it */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Gaya untuk kotak mesej kustom */
+        #message-box {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none; /* Set to none by default */
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 50;
+        }
+        #message-box .message-content {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        #message-box .message-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 1rem;
+        }
+        #message-box .message-text {
+            color: #555;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <!-- Header aplikasi, sentiasa kelihatan -->
+        <div class="header">Imbas MyKad</div>
+
+        <!-- Skrin Selamat Datang -->
+        <div id="welcome-screen" class="screen">
+            <div class="flex-grow flex flex-col justify-center items-center px-4">
+                <h1 class="text-3xl font-bold text-gray-800 mb-4">SELAMAT DATANG</h1>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    Ini adalah Aplikasi untuk Imbas MyKad & Simpan Maklumat Dalam 3 Langkah Mudah
+                </p>
+                <!-- Tambah ID pada butang untuk akses JavaScript -->
+                <button id="start-button" class="app-button">
+                    mula
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-8">@asrijamil</p>
+        </div>
+
+        <!-- Skrin Kamera -->
+        <div id="camera-screen" class="screen">
+            <div class="flex-grow flex flex-col justify-center items-center px-4 w-full">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Paparan Kamera</h2>
+                <div class="camera-container">
+                    <video id="camera-stream" autoplay playsinline></video>
+                    <canvas id="camera-canvas" style="display:none;"></canvas>
+                    <div class="scan-box">
+                        Sila letakkan MyKad di dalam kotak
+                    </div>
+                </div>
+                <button class="app-button" onclick="capturePhoto();">
+                    imbas
+                </button>
+            </div>
+            <p class="text-sm text-gray-500 mt-8">@asrijamil</p>
+        </div>
+
+        <!-- Skrin Maklumat -->
+        <div id="info-screen" class="screen">
+            <div class="flex-grow flex flex-col justify-center items-center px-4 w-full">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Paparan Maklumat</h2>
+                <div class="mykad-image-display">
+                    <img id="captured-image" src="" alt="Imej MyKad" style="display:none;">
+                    <span id="image-placeholder-text">Imej MyKad</span>
+                </div>
+
+                <div class="w-full">
+                    <div class="input-group">
+                        <label for="no_kp">No. KP:</label>
+                        <input type="text" id="no_kp" value="">
+                    </div>
+                    <div class="input-group">
+                        <label for="nama">Nama:</label>
+                        <input type="text" id="nama" value="">
+                    </div>
+                    <div class="input-group">
+                        <label for="tarikh_lahir">Tarikh Lahir:</label>
+                        <input type="text" id="tarikh_lahir" value="">
+                    </div>
+                    <div class="input-group">
+                        <label for="alamat">Alamat:</label>
+                        <input type="text" id="alamat" value="">
+                    </div>
+                </div>
+
+                <!-- Butang Tindakan -->
+                <div class="flex justify-between w-full mt-6">
+                    <button class="app-button small-button" onclick="showMessageBox('Info', 'Fungsi Simpan ke Excel belum diimplementasi!');">
+                        simpan
+                    </button>
+                    <button class="app-button small-button secondary" onclick="navigateTo('camera-screen');">
+                        semula
+                    </button>
+                </div>
+
+                <!-- Ciri AI dikuasakan oleh Gemini -->
+                <button class="app-button mt-4 w-full" onclick="generateMyKadSummary();">
+                    ✨ Ringkaskan Maklumat
+                </button>
+                <div class="loading-spinner" id="loading-spinner"></div>
+                <div id="summary-output" class="w-full mt-4 p-4 border border-gray-300 rounded-lg text-gray-700 hidden">
+                    <!-- Ringkasan akan dipaparkan di sini -->
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-8">@asrijamil</p>
+        </div>
+    </div>
+
+    <!-- Kotak Mesej Kustom -->
+    <div id="message-box" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-content-center p-4 z-50" style="display: none;">
+        <div class="message-content">
+            <h3 class="message-title" id="message-box-title"></h3>
+            <p class="message-text" id="message-box-content"></p>
+            <button class="app-button px-6 py-2 text-base" onclick="hideMessageBox()">OK</button>
+        </div>
+    </div>
+
+    <!-- Memuatkan pustaka Lucide Icons untuk ikon yang cantik -->
+    <script src="https://unpkg.com/lucide-v0.395.0@latest/dist/umd/lucide.min.js"></script>
+    <!-- Skrip JavaScript Utama Aplikasi -->
+    <script>
+        let cameraStream = null; // Pemboleh ubah global untuk menyimpan strim kamera
+
+        // Fungsi untuk menunjukkan kotak mesej kustom
+        function showMessageBox(title, message) {
+            const msgBox = document.getElementById('message-box');
+            document.getElementById('message-box-title').innerText = title;
+            document.getElementById('message-box-content').innerText = message;
+            msgBox.style.display = 'flex'; // Paparkan kotak mesej
+        }
+
+        // Fungsi untuk menyembunyikan kotak mesej kustom
+        function hideMessageBox() {
+            document.getElementById('message-box').style.display = 'none'; // Sembunyikan kotak mesej
+        }
+
+        // --- PENTING: Lampirkan event listener setelah DOM dimuatkan ---
+        document.addEventListener('DOMContentLoaded', (event) => {
+            console.log("DOMContentLoaded fired. Initializing...");
+
+            // Sembunyikan kotak mesej pada permulaan
+            hideMessageBox();
+            console.log("Kotak mesej dijangka tersembunyi secara lalai.");
+
+            // Dapatkan butang "mula" dan lampirkan event listener
+            const startButton = document.getElementById('start-button');
+            if (startButton) {
+                startButton.addEventListener('click', function() {
+                    console.log('Event listener: Butang "mula" diklik.');
+                    navigateTo('camera-screen');
+                });
+                console.log("Event listener dilampirkan pada butang 'mula'.");
+            } else {
+                console.error("Butang 'mula' dengan ID 'start-button' tidak ditemui. Semak HTML.");
+            }
+
+            // Pastikan ikon Lucide dipaparkan selepas Lucide dimuatkan
+            // Menggunakan setTimeout sebagai fallback jika Lucide CDN lambat
+            setTimeout(() => {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                    console.log("Lucide icons created.");
+                } else {
+                    console.warn("Lucide is not defined. Ikon mungkin tidak dipaparkan.");
+                }
+            }, 100); // Sedikit kelewatan
+        });
+
+        // Fungsi untuk menguruskan navigasi antara skrin
+        function navigateTo(screenId) {
+            console.log(`Navigasi dipanggil ke: ${screenId}`);
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.style.display = 'none';
+                console.log(`Menyembunyikan: ${screen.id}`);
+            });
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.style.display = 'flex';
+                console.log(`Memaparkan skrin: ${screenId}`);
+            } else {
+                console.error(`Skrin sasaran dengan ID "${screenId}" tidak ditemui.`);
+                showMessageBox("Ralat Navigasi", `Skrin "${screenId}" tidak ditemui. Sila hubungi pembangun.`);
+                return; // Hentikan fungsi jika skrin tidak ditemui
+            }
+
+            // Jika navigasi ke skrin kamera, mulakan kamera
+            if (screenId === 'camera-screen') {
+                startCamera();
+            } else {
+                stopCamera(); // Hentikan kamera jika beralih dari skrin kamera
+            }
+
+            // Sembunyikan ringkasan dan spinner apabila bertukar skrin
+            document.getElementById('summary-output').classList.add('hidden');
+            document.getElementById('loading-spinner').style.display = 'none';
+            // Kosongkan dan sembunyikan imej yang ditangkap
+            document.getElementById('captured-image').src = '';
+            document.getElementById('captured-image').style.display = 'none';
+            document.getElementById('image-placeholder-text').style.display = 'block';
+        }
+
+        // Fungsi untuk memulakan strim kamera
+        async function startCamera() {
+            console.log("Mencuba untuk memulakan kamera...");
+            const video = document.getElementById('camera-stream');
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showMessageBox("Ralat Pelayar", "Pelayar anda tidak menyokong akses kamera. Sila gunakan pelayar yang lebih baru atau peranti yang berbeza.");
+                console.error("getUserMedia tidak disokong.");
+                return; // Hentikan fungsi jika tidak disokong
+            }
+
+            try {
+                let stream = null;
+                // Cuba untuk mendapatkan strim video dengan tetapan generik terlebih dahulu
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    console.log("Strim kamera diperolehi dengan tetapan generik.");
+                } catch (e) {
+                    // Jika tetapan generik gagal, cuba dengan facingMode 'environment' (kamera belakang)
+                    console.warn("Akses kamera generik gagal, mencuba 'environment' facingMode:", e);
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    console.log("Strim kamera diperolehi dengan 'environment' facingMode.");
+                }
+
+                video.srcObject = stream;
+                cameraStream = stream; // Simpan strim untuk pemberhentian kemudian
+
+                // Pastikan video mula dimainkan sebelum meneruskan
+                video.onloadedmetadata = () => {
+                    video.play();
+                    console.log("Video telah mula dimainkan.");
+                };
+                // Jika video sudah dimuat, mainkan terus
+                if (video.readyState >= video.HAVE_CURRENT_DATA) {
+                    video.play();
+                    console.log("Video sudah sedia, telah dimainkan.");
+                }
+
+
+            } catch (err) {
+                console.error("Ralat mengakses kamera: ", err);
+                let errorMessage = "Tidak dapat mengakses kamera. Sila benarkan akses kamera di pelayar anda.";
+                if (err.name === "NotAllowedError") {
+                    errorMessage = "Akses kamera ditolak. Sila benarkan akses kamera melalui tetapan pelayar anda.";
+                } else if (err.name === "NotFoundError") {
+                    errorMessage = "Tiada kamera ditemui pada peranti anda.";
+                } else if (err.name === "NotReadableError") {
+                    errorMessage = "Kamera mungkin sedang digunakan oleh aplikasi lain.";
+                }
+                showMessageBox("Ralat Akses Kamera", errorMessage);
+            }
+        }
+
+        // Fungsi untuk menghentikan strim kamera
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                console.log("Kamera telah dihentikan.");
+            }
+        }
+
+        // Fungsi untuk menangkap gambar dari strim kamera
+        function capturePhoto() {
+            const video = document.getElementById('camera-stream');
+            const canvas = document.getElementById('camera-canvas');
+            const capturedImage = document.getElementById('captured-image');
+            const imagePlaceholderText = document.getElementById('image-placeholder-text');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageDataUrl = canvas.toDataURL('image/png');
+                capturedImage.src = imageDataUrl;
+                capturedImage.style.display = 'block';
+                imagePlaceholderText.style.display = 'none';
+
+                // Simulasi data MyKad
+                document.getElementById('no_kp').value = '880101-14-5678';
+                document.getElementById('nama').value = 'AHMAD BIN HASSAN';
+                document.getElementById('tarikh_lahir').value = '01/01/1988';
+                document.getElementById('alamat').value = 'NO. 10, JALAN ANGGUR, TAMAN MAKMUR, 43000 KAJANG, SELANGOR';
+
+                navigateTo('info-screen'); // Navigasi ke skrin maklumat
+                console.log("Gambar ditangkap dan navigasi ke skrin maklumat.");
+            } else {
+                showMessageBox("Kamera Tidak Sedia", "Kamera belum bersedia untuk menangkap gambar. Sila pastikan strim video kelihatan dan cuba lagi.");
+                console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA.");
+            }
+        }
+
+        // Fungsi untuk memanggil Gemini API dan menjana ringkasan
+        async function generateMyKadSummary() {
+            const no_kp = document.getElementById('no_kp').value;
+            const nama = document.getElementById('nama').value;
+            const tarikh_lahir = document.getElementById('tarikh_lahir').value;
+            const alamat = document.getElementById('alamat').value;
+            const summaryOutput = document.getElementById('summary-output');
+            const loadingSpinner = document.getElementById('loading-spinner');
+
+            loadingSpinner.style.display = 'block';
+            summaryOutput.classList.add('hidden');
+            summaryOutput.innerText = '';
+            console.log("Menjana ringkasan dengan Gemini AI...");
+
+            const prompt = `Sila ringkaskan maklumat MyKad berikut dalam satu atau dua ayat sahaja. Fokus pada identiti utama dan lokasi:
+            Nombor KP: ${no_kp}
+            Nama: ${nama}
+            Tarikh Lahir: ${tarikh_lahir}
+            Alamat: ${alamat}
+            Ringkasan:`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // API key will be provided automatically by the Canvas environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    summaryOutput.innerText = text;
+                    summaryOutput.classList.remove('hidden');
+                    console.log("Ringkasan Gemini AI berjaya dijana.");
+                } else {
+                    summaryOutput.innerText = 'Gagal menjana ringkasan. Tiada hasil daripada Gemini API.';
+                    summaryOutput.classList.remove('hidden');
+                    console.error("Gagal menjana ringkasan: Tiada hasil daripada Gemini API.");
+                }
+            } catch (error) {
+                console.error('Ralat memanggil Gemini API:', error);
+                summaryOutput.innerText = 'Ralat menjana ringkasan: ' + error.message;
+                summaryOutput.classList.remove('hidden');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
