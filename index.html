@@ -407,13 +407,13 @@
             console.log(`Navigasi dipanggil ke: ${screenId}`);
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden'); // Sembunyikan semua skrin
-                screen.style.display = 'none'; // Tambahan: Pastikan inline display none
+                // screen.style.display = 'none'; // Dikeluarkan untuk bergantung pada Tailwind hidden
                 console.log(`Menyembunyikan: ${screen.id}`);
             });
             const targetScreen = document.getElementById(screenId);
             if (targetScreen) {
                 targetScreen.classList.remove('hidden'); // Paparkan skrin sasaran
-                targetScreen.style.display = 'flex'; // Pastikan display flex untuk layout yang betul
+                targetScreen.style.display = 'flex'; // Kekalkan ini untuk layout yang betul
                 console.log(`Memaparkan skrin: ${screenId}`);
             } else {
                 console.error(`Skrin sasaran dengan ID "${screenId}" tidak ditemui.`);
@@ -431,14 +431,18 @@
             // Sembunyikan ringkasan dan spinner apabila bertukar skrin
             document.getElementById('summary-output').classList.add('hidden');
             document.getElementById('loading-spinner').classList.add('hidden'); // Guna class hidden
-            // Kosongkan dan sembunyikan imej yang ditangkap, gunakan GIF telus untuk mengelakkan ralat src
-            const capturedImage = document.getElementById('captured-image');
-            capturedImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Set to a transparent GIF
-            capturedImage.classList.add('hidden'); // Guna class hidden
-            document.getElementById('image-placeholder-text').classList.remove('hidden'); // Guna class hidden
-            // Hapus event listener onload/onerror yang mungkin masih ada
-            capturedImage.onload = null;
-            capturedImage.onerror = null;
+
+            // Pembersihan imej dan placeholder hanya apabila pergi ke skrin kamera atau mula semula
+            if (screenId === 'camera-screen') {
+                const capturedImage = document.getElementById('captured-image');
+                capturedImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Set to a transparent GIF
+                capturedImage.classList.add('hidden'); // Sembunyikan imej
+                document.getElementById('image-placeholder-text').classList.remove('hidden'); // Paparkan placeholder
+                // Hapus event listener onload/onerror yang mungkin masih ada
+                capturedImage.onload = null;
+                capturedImage.onerror = null;
+                console.log("Imej MyKad dan placeholder dibersihkan.");
+            }
         }
 
         // Fungsi untuk memulakan strim kamera
