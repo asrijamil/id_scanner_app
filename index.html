@@ -133,27 +133,40 @@
             height: 0; /* Set height to 0 when using padding-bottom */
             /* border: 3px dashed #ff7f50; */ /* Dikeluarkan */
             border-radius: 0.5rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1rem;
-            color: #ff7f50;
             /* background-color: rgba(255, 127, 80, 0.1); */ /* Dikeluarkan */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
+            /* Keluarkan display flex/justify/align dari sini kerana teks dipindahkan */
         }
-        #camera-screen .scan-box::before { /* Untuk memusatkan teks dalam scan-box */
+        /* Mengeluarkan ::before kerana teks sudah dialih keluar */
+        /* #camera-screen .scan-box::before {
             content: '';
             display: inline-block;
             vertical-align: middle;
-            padding-bottom: 62.79%; /* Same aspect ratio as the box for centering content */
-        }
-        #camera-screen .scan-box span {
+            padding-bottom: 62.79%;
+        } */
+        /* Mengeluarkan span styling dari scan-box kerana teks dipindahkan */
+        /* #camera-screen .scan-box span {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             white-space: nowrap;
+        } */
+
+        #camera-screen .camera-container span.centered-text { /* Gaya untuk teks yang dipusatkan dalam camera-container */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            color: #ffffff; /* Warna teks untuk kelihatan pada video */
+            font-size: 1.15rem; /* Saiz fon yang sedikit lebih besar */
+            font-weight: bold;
+            background-color: rgba(0, 0, 0, 0.5); /* Latar belakang separa telus untuk keterlihatan */
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            z-index: 10; /* Pastikan teks di atas video */
         }
 
 
@@ -255,7 +268,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -288,7 +301,7 @@
         }
 
         function handleImageError() {
-            console.error('Image failed to load in handleImageError! This might indicate corrupt data or an invalid data URL.');
+            console.error('Image failed to load in handleImageError! This might indicate corrupt data or an and invalid data URL.');
             showMessageBox('Ralat Imej', 'Imej yang ditangkap gagal dimuatkan. Ini mungkin disebabkan oleh format imej tidak sah atau data rosak. Sila cuba tangkap gambar semula.');
             // Pastikan placeholder kembali kelihatan jika imej gagal dimuat
             document.getElementById('captured-image').classList.add('hidden');
@@ -326,8 +339,10 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <span>Sila letakkan MyKad di dalam kotak</span>
+                        <!-- Kotak imbasan kosong, hanya untuk nisbah aspek dan overlay video -->
                     </div>
+                    <!-- Teks dipindahkan ke sini, di dalam camera-container -->
+                    <span class="centered-text">Sila letakkan MyKad di dalam kotak</span>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
                     imbas
@@ -659,10 +674,10 @@
                 }
 
                 // Simulasi data MyKad (masih menggunakan data keras buat masa ini)
-                document.getElementById('no_kp').value = '880101-14-5678';
-                document.getElementById('nama').value = 'AHMAD BIN HASSAN';
-                document.getElementById('tarikh_lahir').value = '01/01/1988';
-                document.getElementById('alamat').value = 'NO. 10, JALAN ANGGUR, TAMAN MAKMUR, 43000 KAJANG, SELANGOR';
+                document.getElementById('no_kp').value = '701031-05-5277';
+                document.getElementById('nama').value = 'MOHD ASRI BIN M.JAMIL';
+                document.getElementById('tarikh_lahir').value = '31/10/1970';
+                document.getElementById('alamat').value = 'NO. 29, JALAN BELIDA 16, TAMAN BUKIT CHEDANG, 70300 SEREMBAN, NEGERI SEMBILAN';
 
                 navigateTo('info-screen'); // Navigasi ke skrin maklumat
                 console.log("Simulated MyKad data filled and navigated to info screen.");
