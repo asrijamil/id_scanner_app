@@ -256,7 +256,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -289,7 +289,7 @@
         }
 
         function handleImageError() {
-            console.error('Image failed to load in handleImageError! This might indicate corrupt data or an and invalid data URL.');
+            console.error('Image failed to load in handleImageError! This might indicate corrupt data or an invalid data URL.');
             showMessageBox('Ralat Imej', 'Imej yang ditangkap gagal dimuatkan. Ini mungkin disebabkan oleh format imej tidak sah atau data rosak. Sila cuba tangkap gambar semula.');
             // Pastikan placeholder kembali kelihatan jika imej gagal dimuat
             document.getElementById('captured-image').classList.add('hidden');
@@ -327,7 +327,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <!-- Kotak imbasan kini kosong daripada teks -->
+                        <span class="scan-box-text">Sila letakkan MyKad di dalam kotak</span>
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
@@ -432,6 +432,35 @@
             document.getElementById('captured-image').onerror = null;
         }
 
+        // Fungsi untuk menginisialisasi Tesseract worker sekali sahaja
+        async function initializeOcrWorker() {
+            if (!ocrWorker) {
+                console.log("Initializing Tesseract.js worker...");
+                showMessageBox('Memuatkan OCR', 'Sedang memuatkan modul pengecaman teks, sila tunggu...');
+                try {
+                    ocrWorker = await Tesseract.createWorker('eng', 1, {
+                        logger: m => { // Optional: See OCR progress in console
+                            if (m.status === 'recognizing text') {
+                                console.log(`OCR Progress: ${m.progress.toFixed(2)}`);
+                                // Update message box more dynamically
+                                showMessageBox('Memproses MyKad', `Mengecam teks: ${(m.progress * 100).toFixed(0)}%`);
+                            } else {
+                                console.log(`OCR Status: ${m.status}`);
+                                showMessageBox('Memproses MyKad', `Status OCR: ${m.status}...`);
+                            }
+                        }
+                    });
+                    console.log("Tesseract.js worker created and language loaded.");
+                    hideMessageBox(); // Hide after loading is complete
+                } catch (e) {
+                    console.error("Failed to initialize Tesseract.js worker:", e);
+                    showMessageBox('Ralat OCR', 'Gagal memulakan enjin OCR. Sila cuba muat semula halaman.');
+                    ocrWorker = null; // Reset worker if initialization fails
+                }
+            }
+        }
+
+
         // --- PENTING: Lampirkan event listener setelah DOM dimuatkan ---
         document.addEventListener('DOMContentLoaded', (event) => {
             console.log("DOMContentLoaded fired. Initializing...");
@@ -461,6 +490,9 @@
                     console.warn("Lucide is not defined. Ikon mungkin tidak dipaparkan.");
                 }
             }, 100); // Sedikit kelewatan
+
+            // Inisialisasi pekerja OCR apabila DOMContentLoaded
+            initializeOcrWorker();
         });
 
         // Fungsi untuk menguruskan navigasi antara skrin
@@ -685,19 +717,22 @@
                     showMessageBox('Memproses MyKad', 'Sedang mengecam maklumat MyKad, sila tunggu...'); // Maklumkan pengguna
 
                     try {
+                        // Pastikan pekerja OCR sudah tersedia
+                        if (!ocrWorker) {
+                            console.warn("OCR worker not initialized. Attempting to re-initialize (should ideally be done once).");
+                            await initializeOcrWorker(); // Try to initialize if somehow not ready
+                            if (!ocrWorker) {
+                                throw new Error("OCR worker could not be initialized.");
+                            }
+                        }
+
                         // Tunggu imej dimuatkan sepenuhnya ke dalam elemen <img>
                         await imageLoadPromise;
-
-                        // --- Lakukan OCR menggunakan Tesseract.js ---
-                        if (!ocrWorker) {
-                            console.log("Creating new Tesseract.js worker...");
-                            ocrWorker = await Tesseract.createWorker('eng'); // Memuatkan bahasa Inggeris
-                            console.log("Tesseract.js worker created and language loaded.");
-                        }
 
                         console.log("Performing OCR recognition...");
                         const { data: { text, lines } } = await ocrWorker.recognize(canvas.toDataURL('image/png')); // Gunakan data dari canvas
                         console.log("OCR recognition complete. Full text:", text);
+                        console.log("OCR lines data:", lines); // Log lines data for more granular info
 
                         // --- Ekstrak Maklumat MyKad ---
                         let noKp = '';
