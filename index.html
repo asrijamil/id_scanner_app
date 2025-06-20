@@ -94,15 +94,15 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            /* Default to flex, hidden will override */
-            display: flex; /* Display as flex by default for correct layout when visible */
+            display: none; /* Semua skrin tersembunyi secara lalai */
         }
-        /* Hide all screens initially except welcome screen in HTML */
-        /* #welcome-screen will explicitly have display: flex; in HTML */
-
+        /* Tailwind's 'hidden' class will override 'display: flex' for other screens */
+        #welcome-screen {
+            display: flex; /* Paparkan skrin selamat datang pada mulanya */
+        }
         #camera-screen .camera-container {
             width: 100%;
-            height: 250px;
+            height: 250px; /* Base height, adjust if needed */
             background-color: #e2e8f0;
             border-radius: 1rem;
             display: flex;
@@ -125,8 +125,9 @@
         }
         #camera-screen .scan-box {
             position: absolute;
-            width: 80%;
-            height: 150px;
+            width: 80%; /* Lebar kotak imbasan */
+            padding-bottom: calc(80% * (54 / 86)); /* Nisbah aspek MyKad: tinggi/lebar */
+            height: 0; /* Set height to 0 when using padding-bottom */
             border: 3px dashed #ff7f50;
             border-radius: 0.5rem;
             display: flex;
@@ -136,7 +137,22 @@
             color: #ff7f50;
             background-color: rgba(255, 127, 80, 0.1); /* Scan box background */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
+            overflow: hidden; /* Penting untuk padding-bottom hack */
         }
+        #camera-screen .scan-box::before { /* Untuk memusatkan teks dalam scan-box */
+            content: '';
+            display: inline-block;
+            vertical-align: middle;
+            padding-bottom: 62.79%; /* Same aspect ratio as the box for centering content */
+        }
+        #camera-screen .scan-box span {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
 
         #info-screen .input-group {
             width: 100%;
@@ -159,24 +175,37 @@
             box-sizing: border-box; /* Ensure padding doesn't add to width */
         }
         #info-screen .mykad-image-display {
-            width: 100%;
-            height: 180px; /* MyKad image display height */
+            width: 100%; /* Lebar bekas imej */
+            padding-bottom: calc(100% * (54 / 86)); /* Nisbah aspek MyKad: tinggi/lebar */
+            height: 0; /* Set height to 0 when using padding-bottom */
+            position: relative; /* Penting untuk kedudukan imej mutlak */
             background-color: #e2e8f0;
             border-radius: 1rem;
             margin-bottom: 2rem;
-            display: flex;
+            overflow: hidden;
+            display: flex; /* Untuk memusatkan placeholder */
             justify-content: center;
             align-items: center;
             color: #64748b;
             font-size: 1.25rem;
-            overflow: hidden; /* Pastikan imej tidak melimpah */
         }
         #info-screen .mykad-image-display img {
+            position: absolute; /* Tetapkan kedudukan mutlak untuk mengisi bekas */
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Menyesuaikan imej ke dalam bekas */
-            border: 2px solid red; /* DEBUG: Border sementara untuk imej yang ditangkap */
+            object-fit: contain; /* Menyesuaikan imej ke dalam bekas tanpa memotong */
+            /* border: 2px solid red; */ /* DEBUG: Dikeluarkan setelah diperbaiki */
         }
+        #info-screen .mykad-image-display span {
+            position: absolute; /* Tetapkan kedudukan mutlak untuk mengisi bekas */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Pusatkan teks placeholder */
+            white-space: nowrap; /* Elakkan teks pecah baris */
+        }
+
         /* Gaya untuk output ringkasan AI */
         #summary-output {
             background-color: #f8f8f8;
@@ -294,7 +323,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        Sila letakkan MyKad di dalam kotak
+                        <span>Sila letakkan MyKad di dalam kotak</span>
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
@@ -430,255 +459,4 @@
 
             // Sembunyikan ringkasan dan spinner apabila bertukar skrin
             document.getElementById('summary-output').classList.add('hidden');
-            document.getElementById('loading-spinner').classList.add('hidden'); // Guna class hidden
-
-            // Pembersihan imej dan placeholder hanya apabila pergi ke skrin kamera atau mula semula
-            if (screenId === 'camera-screen' || screenId === 'welcome-screen') { // Also clear on welcome screen return
-                const capturedImage = document.getElementById('captured-image');
-                capturedImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Set to a transparent GIF
-                capturedImage.classList.add('hidden'); // Sembunyikan imej
-                document.getElementById('image-placeholder-text').classList.remove('hidden'); // Paparkan placeholder
-                // Hapus event listener onload/onerror yang mungkin masih ada
-                capturedImage.onload = null;
-                capturedImage.onerror = null;
-                console.log("Imej MyKad dan placeholder dibersihkan.");
-            }
-        }
-
-        // Fungsi untuk memulakan strim kamera
-        async function startCamera() {
-            console.log("Mencuba untuk memulakan kamera..."); // Diperkemas log
-            const video = document.getElementById('camera-stream');
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showMessageBox("Ralat Pelayar", "Pelayar anda tidak menyokong akses kamera. Sila gunakan pelayar yang lebih baru atau peranti yang berbeza.");
-                console.error("getUserMedia tidak disokong.");
-                return;
-            }
-
-            try {
-                let stream = null;
-                let usedFacingMode = 'none';
-
-                // Cuba secara langsung untuk kamera belakang (environment)
-                try {
-                    console.log("Mencuba 'environment' facingMode (kamera belakang)...");
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                    usedFacingMode = 'environment';
-                    console.log("Strim kamera diperolehi dengan 'environment' facingMode (kamera belakang).");
-                } catch (e) {
-                    console.warn("Akses kamera belakang gagal, mencuba 'user' facingMode (kamera depan):", e);
-                    try {
-                        // Jika kamera belakang gagal, cuba 'user' facingMode (kamera depan)
-                        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                        usedFacingMode = 'user';
-                        console.log("Strim kamera diperolehi dengan 'user' facingMode (kamera depan).");
-                    } catch (e2) {
-                        // Jika kedua-duanya gagal, cuba tetapan generik (mungkin lalai kepada kamera depan jika tiada pilihan lain)
-                        console.warn("Akses kamera depan juga gagal, mencuba tetapan kamera generik:", e2);
-                        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        usedFacingMode = 'generic';
-                        console.log("Strim kamera diperolehi dengan tetapan generik.");
-                    }
-                }
-
-                if (!stream) {
-                    throw new Error("Tiada strim kamera dapat diperolehi.");
-                }
-
-                video.srcObject = stream;
-                cameraStream = stream; // Simpan strim untuk pemberhentian kemudian
-
-                // Pastikan video mula dimainkan sebelum meneruskan
-                video.onloadedmetadata = () => {
-                    video.play();
-                    console.log(`Video telah mula dimainkan. Menggunakan kamera: ${usedFacingMode}`);
-                    console.log(`Resolusi video: ${video.videoWidth}x${video.videoHeight}`);
-                    // Hanya terapkan transformasi cermin jika kamera depan digunakan
-                    if (usedFacingMode === 'user') {
-                        video.style.transform = 'scaleX(-1)';
-                        console.log("Transformasi cermin diterapkan untuk kamera depan.");
-                    } else {
-                        video.style.transform = 'none'; // Pastikan tiada pembalikan cermin
-                    }
-                };
-                // Jika video sudah dimuat, mainkan terus
-                if (video.readyState >= video.HAVE_CURRENT_DATA) {
-                    video.play();
-                    console.log(`Video sudah sedia, telah dimainkan. Menggunakan kamera: ${usedFacingMode}`);
-                    console.log(`Resolusi video: ${video.videoWidth}x${video.videoHeight}`);
-                     if (usedFacingMode === 'user') {
-                        video.style.transform = 'scaleX(-1)';
-                    } else {
-                        video.style.transform = 'none';
-                    }
-                }
-
-            } catch (err) {
-                console.error("Ralat mengakses kamera: ", err);
-                let errorMessage = "Tidak dapat mengakses kamera. Sila benarkan akses kamera di pelayar anda.";
-                if (err.name === "NotAllowedError") {
-                    errorMessage = "Akses kamera ditolak. Sila benarkan akses kamera melalui tetapan pelayar anda.";
-                } else if (err.name === "NotFoundError") {
-                    errorMessage = "Tiada kamera ditemui pada peranti anda.";
-                } else if (err.name === "NotReadableError") {
-                    errorMessage = "Kamera mungkin sedang digunakan oleh aplikasi lain.";
-                } else if (err.name === "OverconstrainedError") {
-                    errorMessage = "Kamera dengan ciri yang diminta tidak dapat ditemui (contoh: kamera belakang tiada).";
-                }
-                showMessageBox("Ralat Akses Kamera", errorMessage);
-            }
-        }
-
-        // Fungsi untuk menghentikan strim kamera
-        function stopCamera() {
-            if (cameraStream) {
-                cameraStream.getTracks().forEach(track => track.stop());
-                cameraStream = null;
-                console.log("Kamera telah dihentikan.");
-            }
-        }
-
-        // Fungsi untuk menangkap gambar dari strim kamera
-        function capturePhoto() {
-            console.log("Fungsi capturePhoto() dipanggil.");
-            const video = document.getElementById('camera-stream');
-            const canvas = document.getElementById('camera-canvas');
-            const capturedImage = document.getElementById('captured-image');
-            const imagePlaceholderText = document.getElementById('image-placeholder-text');
-
-            // --- Diagnostik Tambahan: Semak visibility elemen ---
-            console.log('Initial capturedImage.style.display (before setting):', capturedImage.style.display);
-            console.log('Initial imagePlaceholderText.style.display (before setting):', imagePlaceholderText.style.display);
-
-
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                console.log("Video state is HAVE_ENOUGH_DATA.");
-                console.log('Video dimensions (width, height):', video.videoWidth, video.videoHeight);
-
-                // Set canvas dimensions
-                // Penting: Pastikan dimensi kanvas adalah sama dengan video untuk kualiti imej yang baik
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                console.log('Canvas dimensions set to (width, height):', canvas.width, canvas.height);
-
-                const context = canvas.getContext('2d');
-                // Mengambil imej dari video dan melukisnya ke kanvas
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                console.log("Video drawn to canvas.");
-
-                // Menjana data URL imej dari kanvas
-                const imageDataUrl = canvas.toDataURL('image/png');
-                console.log('imageDataUrl generated. Length:', imageDataUrl.length); // Log length to see if it's substantial
-                console.log('imageDataUrl preview (first 100 chars):', imageDataUrl.substring(0, 100)); // Log a preview
-
-                // Semak jika imageDataUrl sah sebelum memaparkan
-                if (imageDataUrl && imageDataUrl.length > 100) { // Jika panjang data URL lebih dari 100, kemungkinan ia imej yang sah
-                    // Set onload and onerror handlers before setting src
-                    capturedImage.onload = () => {
-                        capturedImage.classList.remove('hidden'); // Paparkan elemen imej
-                        imagePlaceholderText.classList.add('hidden'); // Sembunyikan teks placeholder
-                        console.log("Captured image ONLOAD. Display changed to block.");
-                        console.log("Current capturedImage.style.display (after onload):", capturedImage.style.display);
-                        console.log(`Captured image natural dimensions: ${capturedImage.naturalWidth}x${capturedImage.naturalHeight}`);
-                        // Penting: Alih keluar onload handler setelah ia dicetuskan
-                        capturedImage.onload = null;
-                        capturedImage.onerror = null; // Juga alih keluar onerror
-                    };
-                    capturedImage.onerror = () => {
-                        handleImageError();
-                        // Penting: Alih keluar onerror handler setelah ia dicetuskan
-                        capturedImage.onload = null;
-                        capturedImage.onerror = null;
-                    };
-
-                    capturedImage.src = imageDataUrl;
-                    console.log("Captured image src set. Waiting for image to load before displaying...");
-
-                    // Jika imej sudah dimuat (mungkin cached data URL), pastikan onload dipanggil
-                    if (capturedImage.complete) {
-                        console.log("Image already complete, triggering onload manually.");
-                        capturedImage.onload();
-                    }
-
-                } else {
-                    console.error("imageDataUrl appears to be empty or too short. Image capture might have failed.");
-                    showMessageBox("Ralat Tangkapan Imej", "Gagal menangkap imej. Imej yang ditangkap kosong atau tidak sah.");
-                    // Kekalkan placeholder kelihatan jika tangkapan imej gagal
-                    capturedImage.classList.add('hidden'); // Pastikan imej tersembunyi
-                    imagePlaceholderText.classList.remove('hidden'); // Paparkan placeholder
-                }
-
-                // Simulasi data MyKad (masih menggunakan data keras buat masa ini)
-                document.getElementById('no_kp').value = '880101-14-5678';
-                document.getElementById('nama').value = 'AHMAD BIN HASSAN';
-                document.getElementById('tarikh_lahir').value = '01/01/1988';
-                document.getElementById('alamat').value = 'NO. 10, JALAN ANGGUR, TAMAN MAKMUR, 43000 KAJANG, SELANGOR';
-
-                navigateTo('info-screen'); // Navigasi ke skrin maklumat
-                console.log("Simulated MyKad data filled and navigated to info screen.");
-            } else {
-                showMessageBox("Kamera Tidak Sedia", "Kamera belum bersedia untuk menangkap gambar. Sila pastikan strim video kelihatan dan cuba lagi.");
-                console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA. Current state:", video.readyState);
-            }
-        }
-
-        // Fungsi untuk memanggil Gemini API dan menjana ringkasan
-        async function generateMyKadSummary() {
-            const no_kp = document.getElementById('no_kp').value;
-            const nama = document.getElementById('nama').value;
-            const tarikh_lahir = document.getElementById('tarikh_lahir').value;
-            const alamat = document.getElementById('alamat').value;
-            const summaryOutput = document.getElementById('summary-output');
-            const loadingSpinner = document.getElementById('loading-spinner');
-
-            loadingSpinner.classList.remove('hidden'); // Paparkan spinner
-            summaryOutput.classList.add('hidden'); // Sembunyikan output
-            summaryOutput.innerText = '';
-            console.log("Menjana ringkasan dengan Gemini AI...");
-
-            const prompt = `Sila ringkaskan maklumat MyKad berikut dalam satu atau dua ayat sahaja. Fokus pada identiti utama dan lokasi:
-            Nombor KP: ${no_kp}
-            Nama: ${nama}
-            Tarikh Lahir: ${tarikh_lahir}
-            Alamat: ${alamat}
-            Ringkasan:`;
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-
-            const payload = { contents: chatHistory };
-            const apiKey = ""; // API key will be provided automatically by the Canvas environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    summaryOutput.innerText = text;
-                    summaryOutput.classList.remove('hidden');
-                    console.log("Ringkasan Gemini AI berjaya dijana.");
-                } else {
-                    summaryOutput.innerText = 'Gagal menjana ringkasan. Tiada hasil daripada Gemini API.';
-                    summaryOutput.classList.remove('hidden');
-                    console.error("Gagal menjana ringkasan: Tiada hasil daripada Gemini API.");
-                }
-            } catch (error) {
-                console.error('Ralat memanggil Gemini API:', error);
-                summaryOutput.innerText = 'Ralat menjana ringkasan: ' + error.message;
-                summaryOutput.classList.remove('hidden');
-            } finally {
-                loadingSpinner.classList.add('hidden'); // Sembunyikan spinner
-            }
-        }
-    </script>
-</body>
-</html>
+            document.getElementById('loadi
