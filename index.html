@@ -131,24 +131,32 @@
             width: 80%; /* Lebar kotak imbasan */
             padding-bottom: calc(80% * (54 / 86)); /* Nisbah aspek MyKad: tinggi/lebar */
             height: 0; /* Set height to 0 when using padding-bottom */
-            border: 3px dashed #ff7f50;
+            /* border: 3px dashed #ff7f50; */ /* Dikeluarkan */
             border-radius: 0.5rem;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 1rem;
             color: #ff7f50;
-            background-color: rgba(255, 127, 80, 0.1); /* Scan box background */
+            /* background-color: rgba(255, 127, 80, 0.1); */ /* Dikeluarkan */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
         }
-        #camera-screen .scan-box span {
+        /* Mengeluarkan ::before kerana teks sudah dialih keluar */
+        /* #camera-screen .scan-box::before {
+            content: '';
+            display: inline-block;
+            vertical-align: middle;
+            padding-bottom: 62.79%;
+        } */
+        /* Mengeluarkan span styling kerana teks sudah dialih keluar */
+        /* #camera-screen .scan-box span {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             white-space: nowrap;
-        }
+        } */
 
 
         #info-screen .input-group {
@@ -249,7 +257,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -320,7 +328,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <span>Sila letakkan MyKad di dalam kotak</span>
+                        <!-- Teks dikeluarkan dari sini -->
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
