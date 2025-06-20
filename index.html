@@ -282,7 +282,7 @@
             <div class="flex-grow flex flex-col justify-center items-center px-4 w-full">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Paparan Maklumat</h2>
                 <div class="mykad-image-display">
-                    <img id="captured-image" src="" alt="Imej MyKad" style="display:none;">
+                    <img id="captured-image" src="" alt="Imej MyKad" style="display:none;" onerror="console.error('Image failed to load!'); showMessageBox('Ralat Imej', 'Imej yang ditangkap gagal dimuatkan. Ini mungkin disebabkan oleh format imej tidak sah atau data rosak.');">
                     <span id="image-placeholder-text">Imej MyKad</span>
                 </div>
 
@@ -488,111 +488,4 @@
             const capturedImage = document.getElementById('captured-image');
             const imagePlaceholderText = document.getElementById('image-placeholder-text');
 
-            if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                console.log("Video state is HAVE_ENOUGH_DATA.");
-                console.log('Video dimensions (width, height):', video.videoWidth, video.videoHeight);
-
-                // Set canvas dimensions
-                // Penting: Pastikan dimensi kanvas adalah sama dengan video untuk kualiti imej yang baik
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                console.log('Canvas dimensions set to (width, height):', canvas.width, canvas.height);
-
-                const context = canvas.getContext('2d');
-                // Mengambil imej dari video dan melukisnya ke kanvas
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                console.log("Video drawn to canvas.");
-
-                // Menjana data URL imej dari kanvas
-                const imageDataUrl = canvas.toDataURL('image/png');
-                console.log('imageDataUrl generated. Length:', imageDataUrl.length); // Log length to see if it's substantial
-
-                // Semak jika imageDataUrl sah sebelum memaparkan
-                if (imageDataUrl && imageDataUrl.length > 100) { // Jika panjang data URL lebih dari 100, kemungkinan ia imej yang sah
-                    capturedImage.src = imageDataUrl;
-                    capturedImage.style.display = 'block'; // Paparkan elemen imej
-                    imagePlaceholderText.style.display = 'none'; // Sembunyikan teks placeholder
-                    console.log("Captured image src set and display changed to block.");
-                    console.log("Current capturedImage.style.display:", capturedImage.style.display);
-                } else {
-                    console.error("imageDataUrl appears to be empty or too short. Image capture might have failed.");
-                    showMessageBox("Ralat Tangkapan Imej", "Gagal menangkap imej. Imej yang ditangkap kosong atau tidak sah.");
-                    // Kekalkan placeholder kelihatan jika tangkapan imej gagal
-                    capturedImage.style.display = 'none';
-                    imagePlaceholderText.style.display = 'block';
-                }
-
-                // Simulasi data MyKad (masih menggunakan data keras buat masa ini)
-                document.getElementById('no_kp').value = '880101-14-5678';
-                document.getElementById('nama').value = 'AHMAD BIN HASSAN';
-                document.getElementById('tarikh_lahir').value = '01/01/1988';
-                document.getElementById('alamat').value = 'NO. 10, JALAN ANGGUR, TAMAN MAKMUR, 43000 KAJANG, SELANGOR';
-
-                navigateTo('info-screen'); // Navigasi ke skrin maklumat
-                console.log("Simulated MyKad data filled and navigated to info screen.");
-            } else {
-                showMessageBox("Kamera Tidak Sedia", "Kamera belum bersedia untuk menangkap gambar. Sila pastikan strim video kelihatan dan cuba lagi.");
-                console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA. Current state:", video.readyState);
-            }
-        }
-
-        // Fungsi untuk memanggil Gemini API dan menjana ringkasan
-        async function generateMyKadSummary() {
-            const no_kp = document.getElementById('no_kp').value;
-            const nama = document.getElementById('nama').value;
-            const tarikh_lahir = document.getElementById('tarikh_lahir').value;
-            const alamat = document.getElementById('alamat').value;
-            const summaryOutput = document.getElementById('summary-output');
-            const loadingSpinner = document.getElementById('loading-spinner');
-
-            loadingSpinner.style.display = 'block';
-            summaryOutput.classList.add('hidden');
-            summaryOutput.innerText = '';
-            console.log("Menjana ringkasan dengan Gemini AI...");
-
-            const prompt = `Sila ringkaskan maklumat MyKad berikut dalam satu atau dua ayat sahaja. Fokus pada identiti utama dan lokasi:
-            Nombor KP: ${no_kp}
-            Nama: ${nama}
-            Tarikh Lahir: ${tarikh_lahir}
-            Alamat: ${alamat}
-            Ringkasan:`;
-
-            let chatHistory = [];
-            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-
-            const payload = { contents: chatHistory };
-            const apiKey = ""; // API key will be provided automatically by the Canvas environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    summaryOutput.innerText = text;
-                    summaryOutput.classList.remove('hidden');
-                    console.log("Ringkasan Gemini AI berjaya dijana.");
-                } else {
-                    summaryOutput.innerText = 'Gagal menjana ringkasan. Tiada hasil daripada Gemini API.';
-                    summaryOutput.classList.remove('hidden');
-                    console.error("Gagal menjana ringkasan: Tiada hasil daripada Gemini API.");
-                }
-            } catch (error) {
-                console.error('Ralat memanggil Gemini API:', error);
-                summaryOutput.innerText = 'Ralat menjana ringkasan: ' + error.message;
-                summaryOutput.classList.remove('hidden');
-            } finally {
-                loadingSpinner.style.display = 'none';
-            }
-        }
-    </script>
-</body>
-</html>
+            // --- Diagnostik Tambahan: Semak visibility ele
