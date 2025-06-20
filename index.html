@@ -136,7 +136,9 @@
             /* background-color: rgba(255, 127, 80, 0.1); */ /* Dikeluarkan */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
-            /* Keluarkan display flex/justify/align dari sini kerana teks dipindahkan */
+            display: flex; /* Untuk memusatkan teks di dalamnya */
+            justify-content: center;
+            align-items: center;
         }
         /* Mengeluarkan ::before kerana teks sudah dialih keluar */
         /* #camera-screen .scan-box::before {
@@ -145,28 +147,23 @@
             vertical-align: middle;
             padding-bottom: 62.79%;
         } */
-        /* Mengeluarkan span styling dari scan-box kerana teks dipindahkan */
-        /* #camera-screen .scan-box span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            white-space: nowrap;
-        } */
-
-        #camera-screen .camera-container span.centered-text { /* Gaya untuk teks yang dipusatkan dalam camera-container */
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            white-space: nowrap;
+        #camera-screen .scan-box span { /* Gaya untuk teks yang dipusatkan di dalam scan-box */
+            /* Removed absolute positioning here as flexbox handles it */
+            /* position: absolute; */
+            /* top: 50%; */
+            /* left: 50%; */
+            /* transform: translate(-50%, -50%); */
+            white-space: normal; /* Benarkan teks membalut */
+            text-align: center; /* Pusatkan teks */
             color: #ffffff; /* Warna teks untuk kelihatan pada video */
-            font-size: 1.15rem; /* Saiz fon yang sedikit lebih besar */
+            font-size: 1.2rem; /* Saiz fon yang sedikit lebih besar */
             font-weight: bold;
             background-color: rgba(0, 0, 0, 0.5); /* Latar belakang separa telus untuk keterlihatan */
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             z-index: 10; /* Pastikan teks di atas video */
+            width: 90%; /* Benarkan teks menggunakan kebanyakan lebar kotak imbasan */
+            box-sizing: border-box; /* Sertakan padding dalam lebar */
         }
 
 
@@ -268,7 +265,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -340,9 +337,8 @@
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
                         <!-- Kotak imbasan kosong, hanya untuk nisbah aspek dan overlay video -->
+                        <span class="scan-box-text">Sila letakkan MyKad di dalam kotak</span>
                     </div>
-                    <!-- Teks dipindahkan ke sini, di dalam camera-container -->
-                    <span class="centered-text">Sila letakkan MyKad di dalam kotak</span>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
                     imbas
