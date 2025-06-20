@@ -493,32 +493,36 @@
                 console.log('Video dimensions (width, height):', video.videoWidth, video.videoHeight);
 
                 // Set canvas dimensions
+                // Penting: Pastikan dimensi kanvas adalah sama dengan video untuk kualiti imej yang baik
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 console.log('Canvas dimensions set to (width, height):', canvas.width, canvas.height);
 
                 const context = canvas.getContext('2d');
+                // Mengambil imej dari video dan melukisnya ke kanvas
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 console.log("Video drawn to canvas.");
 
+                // Menjana data URL imej dari kanvas
                 const imageDataUrl = canvas.toDataURL('image/png');
                 console.log('imageDataUrl generated. Length:', imageDataUrl.length); // Log length to see if it's substantial
 
-                if (imageDataUrl && imageDataUrl.length > 100) { // Check if it's a non-trivial data URL
+                // Semak jika imageDataUrl sah sebelum memaparkan
+                if (imageDataUrl && imageDataUrl.length > 100) { // Jika panjang data URL lebih dari 100, kemungkinan ia imej yang sah
                     capturedImage.src = imageDataUrl;
-                    capturedImage.style.display = 'block';
-                    imagePlaceholderText.style.display = 'none';
+                    capturedImage.style.display = 'block'; // Paparkan elemen imej
+                    imagePlaceholderText.style.display = 'none'; // Sembunyikan teks placeholder
                     console.log("Captured image src set and display changed to block.");
                     console.log("Current capturedImage.style.display:", capturedImage.style.display);
                 } else {
                     console.error("imageDataUrl appears to be empty or too short. Image capture might have failed.");
                     showMessageBox("Ralat Tangkapan Imej", "Gagal menangkap imej. Imej yang ditangkap kosong atau tidak sah.");
-                    // Keep placeholder visible if image capture fails
+                    // Kekalkan placeholder kelihatan jika tangkapan imej gagal
                     capturedImage.style.display = 'none';
                     imagePlaceholderText.style.display = 'block';
                 }
 
-                // Simulasi data MyKad
+                // Simulasi data MyKad (masih menggunakan data keras buat masa ini)
                 document.getElementById('no_kp').value = '880101-14-5678';
                 document.getElementById('nama').value = 'AHMAD BIN HASSAN';
                 document.getElementById('tarikh_lahir').value = '01/01/1988';
