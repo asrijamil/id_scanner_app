@@ -327,7 +327,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <span class="scan-box-text">Sila letakkan MyKad di dalam kotak</span>
+                        <!-- Teks dikeluarkan dari sini -->
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
@@ -484,7 +484,7 @@
             const video = document.getElementById('camera-stream');
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 showMessageBox("Ralat Pelayar", "Pelayar anda tidak menyokong akses kamera. Sila gunakan pelayar yang lebih baru atau peranti yang berbeza.");
-                console.error("getUserMedia tidak disokong.");
+                console.error("getUserMedia tidak disokun. (getUserMedia is not supported.)"); // Add Malay translation
                 return;
             }
 
