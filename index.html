@@ -482,21 +482,41 @@
 
         // Fungsi untuk menangkap gambar dari strim kamera
         function capturePhoto() {
+            console.log("Fungsi capturePhoto() dipanggil.");
             const video = document.getElementById('camera-stream');
             const canvas = document.getElementById('camera-canvas');
             const capturedImage = document.getElementById('captured-image');
             const imagePlaceholderText = document.getElementById('image-placeholder-text');
 
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                console.log("Video state is HAVE_ENOUGH_DATA.");
+                console.log('Video dimensions (width, height):', video.videoWidth, video.videoHeight);
+
+                // Set canvas dimensions
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
+                console.log('Canvas dimensions set to (width, height):', canvas.width, canvas.height);
+
                 const context = canvas.getContext('2d');
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                console.log("Video drawn to canvas.");
 
                 const imageDataUrl = canvas.toDataURL('image/png');
-                capturedImage.src = imageDataUrl;
-                capturedImage.style.display = 'block';
-                imagePlaceholderText.style.display = 'none';
+                console.log('imageDataUrl generated. Length:', imageDataUrl.length); // Log length to see if it's substantial
+
+                if (imageDataUrl && imageDataUrl.length > 100) { // Check if it's a non-trivial data URL
+                    capturedImage.src = imageDataUrl;
+                    capturedImage.style.display = 'block';
+                    imagePlaceholderText.style.display = 'none';
+                    console.log("Captured image src set and display changed to block.");
+                    console.log("Current capturedImage.style.display:", capturedImage.style.display);
+                } else {
+                    console.error("imageDataUrl appears to be empty or too short. Image capture might have failed.");
+                    showMessageBox("Ralat Tangkapan Imej", "Gagal menangkap imej. Imej yang ditangkap kosong atau tidak sah.");
+                    // Keep placeholder visible if image capture fails
+                    capturedImage.style.display = 'none';
+                    imagePlaceholderText.style.display = 'block';
+                }
 
                 // Simulasi data MyKad
                 document.getElementById('no_kp').value = '880101-14-5678';
@@ -505,10 +525,10 @@
                 document.getElementById('alamat').value = 'NO. 10, JALAN ANGGUR, TAMAN MAKMUR, 43000 KAJANG, SELANGOR';
 
                 navigateTo('info-screen'); // Navigasi ke skrin maklumat
-                console.log("Gambar ditangkap dan navigasi ke skrin maklumat.");
+                console.log("Simulated MyKad data filled and navigated to info screen.");
             } else {
                 showMessageBox("Kamera Tidak Sedia", "Kamera belum bersedia untuk menangkap gambar. Sila pastikan strim video kelihatan dan cuba lagi.");
-                console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA.");
+                console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA. Current state:", video.readyState);
             }
         }
 
