@@ -188,8 +188,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain; /* Menyesuaikan imej ke dalam bekas tanpa memotong */
-            border: 2px solid red; /* DEBUG: Border sementara untuk imej yang ditangkap */
+            object-fit: cover; /* Menyesuaikan imej ke dalam bekas tanpa memotong */
+            /* border: 2px solid red; */ /* DEBUG: Border sementara untuk imej yang ditangkap - Dikeluarkan */
         }
         #info-screen .mykad-image-display span {
             position: absolute; /* Tetapkan kedudukan mutlak untuk mengisi bekas */
@@ -245,7 +245,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -617,6 +617,7 @@
                     // Set onload and onerror handlers before setting src
                     capturedImage.onload = () => {
                         capturedImage.classList.remove('hidden'); // Paparkan elemen imej
+                        capturedImage.style.display = 'block'; // Ensure it's explicitly block for visibility
                         imagePlaceholderText.classList.add('hidden'); // Sembunyikan teks placeholder
                         console.log("Captured image ONLOAD. Display changed to block.");
                         console.log("Current capturedImage.style.display (after onload):", capturedImage.style.display);
