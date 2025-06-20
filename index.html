@@ -94,12 +94,11 @@
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
-            display: none; /* Semua skrin tersembunyi secara lalai */
+            display: flex; /* Semua skrin adalah flex secara lalai, kelas hidden akan menyembunyikan */
         }
-        /* Tailwind's 'hidden' class will override 'display: flex' for other screens */
-        #welcome-screen {
-            display: flex; /* Paparkan skrin selamat datang pada mulanya */
-        }
+        /* #welcome-screen will be visible initially by removing hidden class in JS */
+        /* All other screens will have hidden class in HTML */
+
         #camera-screen .camera-container {
             width: 100%;
             height: 250px; /* Base height, adjust if needed */
@@ -138,12 +137,6 @@
             background-color: rgba(255, 127, 80, 0.1); /* Scan box background */
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
-        }
-        #camera-screen .scan-box::before { /* Untuk memusatkan teks dalam scan-box */
-            content: '';
-            display: inline-block;
-            vertical-align: middle;
-            padding-bottom: 62.79%; /* Same aspect ratio as the box for centering content */
         }
         #camera-screen .scan-box span {
             position: absolute;
@@ -196,7 +189,7 @@
             width: 100%;
             height: 100%;
             object-fit: contain; /* Menyesuaikan imej ke dalam bekas tanpa memotong */
-            /* border: 2px solid red; */ /* DEBUG: Dikeluarkan setelah diperbaiki */
+            border: 2px solid red; /* DEBUG: Border sementara untuk imej yang ditangkap */
         }
         #info-screen .mykad-image-display span {
             position: absolute; /* Tetapkan kedudukan mutlak untuk mengisi bekas */
