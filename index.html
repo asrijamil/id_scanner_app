@@ -256,7 +256,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -327,7 +327,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <!-- Teks dikeluarkan dari sini -->
+                        <span class="scan-box-text">Sila letakkan MyKad di dalam kotak</span>
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
@@ -443,7 +443,8 @@
                 console.log("Initializing Tesseract.js worker...");
                 showMessageBox('Memuatkan OCR', 'Sedang memuatkan modul pengecaman teks, sila tunggu...');
                 try {
-                    ocrWorker = await Tesseract.createWorker('eng', 1, {
+                    // Memuatkan dua bahasa: English dan Malay
+                    ocrWorker = await Tesseract.createWorker('eng+msa', 1, { 
                         logger: m => { // Optional: See OCR progress in console
                             if (m.status === 'recognizing text') {
                                 console.log(`OCR Progress: ${m.progress.toFixed(2)}`);
@@ -455,7 +456,7 @@
                             }
                         }
                     });
-                    console.log("Tesseract.js worker created and language loaded.");
+                    console.log("Tesseract.js worker created and languages (eng+msa) loaded.");
                     hideMessageBox(); // Hide after loading is complete
                 } catch (e) {
                     console.error("Failed to initialize Tesseract.js worker:", e);
@@ -678,7 +679,31 @@
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 console.log("Video drawn to canvas.");
 
-                // Menjana data URL imej dari kanvas
+                // --- Image Pre-processing for OCR: Grayscale and Binarization ---
+                console.log("Starting image pre-processing for OCR...");
+                let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                let data = imageData.data;
+                let threshold = 180; // Ambang yang ditala
+
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i];
+                    let g = data[i + 1];
+                    let b = data[i + 2];
+                    // Formula grayscale yang lebih tepat
+                    let gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+                    // Binarization (hitam putih)
+                    let binarized = gray < threshold ? 0 : 255;
+
+                    data[i] = binarized;     // Red
+                    data[i + 1] = binarized; // Green
+                    data[i + 2] = binarized; // Blue
+                    // data[i + 3] is alpha, keep as is
+                }
+                context.putImageData(imageData, 0, 0);
+                console.log("Image pre-processing (grayscale, binarization) complete.");
+
+                // Menjana data URL imej dari kanvas yang telah diproses
                 const imageDataUrl = canvas.toDataURL('image/png');
                 console.log('imageDataUrl generated. Length:', imageDataUrl.length); // Log length to see if it's substantial
                 console.log('imageDataUrl preview (first 100 chars):', imageDataUrl.substring(0, 100)); // Log a preview
@@ -735,7 +760,7 @@
                         await imageLoadPromise;
 
                         console.log("Performing OCR recognition...");
-                        const { data: { text, lines } } = await ocrWorker.recognize(canvas.toDataURL('image/png')); // Gunakan data dari canvas
+                        const { data: { text, lines } } = await ocrWorker.recognize(canvas); // Gunakan objek canvas terus
                         console.log("OCR recognition complete. Full text:", text);
                         console.log("OCR lines data:", lines); // Log lines data for more granular info
 
@@ -749,90 +774,95 @@
                         console.log("OCR lines array:", linesArray);
 
                         // Pola Regex untuk mengekstrak maklumat (perlu disesuaikan untuk ketepatan MyKad sebenar)
-                        const noKpRegex = /(\d{6}[ -]\d{2}[ -]\d{4})/; // Contoh: 701031-05-5277
-                        const dobRegex = /(\d{2}[/\-]\d{2}[/\-]\d{4}|\d{2}\s+(JAN|FEB|MAC|APR|MEI|JUN|JUL|OGO|SEP|OKT|NOV|DIS)\s+\d{4})/; // Contoh: 31/10/1970 atau 31 OKT 1970
-                        // Heuristik untuk nama: baris yang mengandungi huruf besar, tidak terlalu pendek, dan tidak kelihatan seperti no KP/DOB/alamat
-                        // Kita akan mencari baris yang kemungkinan besar adalah NAMA, biasanya di awal dokumen selepas kepala surat.
-                        // Jika ada label "NAMA" atau "NAME", ambil baris selepasnya.
+                        const noKpRegex = /(\d{6}[ -]?\d{2}[ -]?\d{4})/; // Contoh: 701031-05-5277, 701031 05 5277, 701031055277
+                        const dobRegex = /(\d{2}[/\-]\d{2}[/\-]\d{4}|\d{2}\s+(JAN|FEB|MAC|APR|MEI|JUN|JUL|OGO|SEP|OKT|NOV|DIS)\s+\d{4})/;
                         const nameLabels = ["NAMA", "NAME"];
                         const addressLabels = ["ALAMAT", "ADDRESS"];
 
                         for (let i = 0; i < linesArray.length; i++) {
                             const line = linesArray[i].toUpperCase();
 
-                            // Cuba cari No. KP
+                            // 1. Cari No. KP (paling konsisten)
                             if (!noKp) {
                                 const match = line.match(noKpRegex);
                                 if (match && match[1]) {
-                                    noKp = match[1].replace(/ /g, '-');
+                                    noKp = match[1].replace(/[ -]/g, ''); // Buang ruang/dash
                                     console.log("Extracted No. KP:", noKp);
+                                    // Cuba ekstrak Tarikh Lahir dari No. KP (YYMMDD)
+                                    if (noKp.length >= 6) {
+                                        let year = parseInt(noKp.substring(0, 2));
+                                        let month = parseInt(noKp.substring(2, 4));
+                                        let day = parseInt(noKp.substring(4, 6));
+                                        
+                                        // Heuristik tahun: jika YY > currentYear % 100, maka abad ke-20 (19YY), jika tidak abad ke-21 (20YY)
+                                        let fullYear = year > (new Date().getFullYear() % 100) ? 1900 + year : 2000 + year;
+                                        
+                                        // Cek validitas tanggal
+                                        const tempDate = new Date(fullYear, month - 1, day);
+                                        if (tempDate.getFullYear() === fullYear && tempDate.getMonth() === month - 1 && tempDate.getDate() === day) {
+                                            tarikhLahir = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${fullYear}`;
+                                            console.log("Derived Tarikh Lahir from No. KP:", tarikhLahir);
+                                        }
+                                    }
                                     continue;
                                 }
                             }
 
-                            // Cuba cari Tarikh Lahir
-                            if (!tarikhLahir) {
-                                const match = line.match(dobRegex);
-                                if (match && match[1]) {
-                                    tarikhLahir = match[1];
-                                    console.log("Extracted Tarikh Lahir:", tarikhLahir);
-                                    continue;
-                                }
-                            }
-
-                            // Cuba cari Nama (logik yang lebih baik)
-                            // Cari label NAMA/NAME, kemudian ambil baris seterusnya
-                            let foundNameLabelIndex = -1;
-                            for (const label of nameLabels) {
-                                if (line.includes(label)) {
-                                    foundNameLabelIndex = i;
-                                    break;
-                                }
-                            }
-
-                            if (!nama && foundNameLabelIndex !== -1 && (foundNameLabelIndex + 1) < linesArray.length) {
-                                const potentialNameLine = linesArray[foundNameLabelIndex + 1].toUpperCase();
-                                // Pastikan baris seterusnya bukan nombor KP, tarikh lahir, atau alamat
-                                if (!noKpRegex.test(potentialNameLine) && !dobRegex.test(potentialNameLine) && !addressLabels.some(lbl => potentialNameLine.includes(lbl))) {
-                                    nama = potentialNameLine.replace(/[^A-Z\s.]/g, '').trim(); // Kekalkan titik untuk singkatan
-                                    console.log("Extracted Nama (from label):", nama);
-                                }
-                            } else if (!nama && line.length > 5 && line.split(' ').length >= 2 && !noKpRegex.test(line) && !dobRegex.test(line) && !addressLabels.some(lbl => line.includes(lbl))) {
-                                // Fallback: Cari baris yang kelihatan seperti nama penuh (sekurang-kurangnya 2 perkataan, bukan nombor/tarikh/alamat)
-                                nama = line.replace(/[^A-Z\s.]/g, '').trim();
-                                console.log("Extracted Nama (fallback heuristic):", nama);
-                            }
-
-                            // Cuba cari Alamat
-                            let foundAddressLabelIndex = -1;
-                            for (const label of addressLabels) {
-                                if (line.includes(label)) {
-                                    foundAddressLabelIndex = i;
-                                    break;
-                                }
-                            }
-
-                            if (!alamat && foundAddressLabelIndex !== -1 && (foundAddressLabelIndex + 1) < linesArray.length) {
-                                let potentialAddressLines = [];
-                                for (let j = foundAddressLabelIndex + 1; j < linesArray.length; j++) {
-                                    const addrLine = linesArray[j].toUpperCase();
-                                    // Berhenti jika jumpa keyword lain atau baris terlalu pendek (bukan alamat)
-                                    if (addrLine.length < 3 || noKpRegex.test(addrLine) || dobRegex.test(addrLine) || nameLabels.some(lbl => addrLine.includes(lbl))) {
+                            // 2. Cari Nama (Selepas No. KP, atau baris yang kelihatan seperti nama)
+                            if (!nama) {
+                                // Cuba cari label "NAMA" atau "NAME", kemudian ambil baris seterusnya
+                                let foundLabel = false;
+                                for (const label of nameLabels) {
+                                    if (line.includes(label)) {
+                                        foundLabel = true;
+                                        if ((i + 1) < linesArray.length) {
+                                            const potentialNameLine = linesArray[i + 1].toUpperCase();
+                                            // Pastikan baris seterusnya bukan nombor KP, tarikh lahir, atau alamat
+                                            if (!noKpRegex.test(potentialNameLine) && !dobRegex.test(potentialNameLine) && !addressLabels.some(lbl => potentialNameLine.includes(lbl))) {
+                                                nama = potentialNameLine.replace(/[^A-Z\s.]/g, '').trim(); // Buang karakter bukan huruf/ruang/titik
+                                                console.log("Extracted Nama (from label):", nama);
+                                            }
+                                        }
                                         break;
                                     }
-                                    potentialAddressLines.push(addrLine);
-                                    if (potentialAddressLines.length >= 3) break; // Ambil max 3 baris
                                 }
-                                if (potentialAddressLines.length > 0) {
-                                    alamat = potentialAddressLines.join(', ').trim().replace(/\s{2,}/g, ' '); // Buang ruang berlebihan
-                                    console.log("Extracted Alamat (from label):", alamat);
+                                if (!foundLabel && line.length > 5 && line.split(' ').length >= 2 && !noKpRegex.test(line) && !dobRegex.test(line) && !addressLabels.some(lbl => line.includes(lbl))) {
+                                    // Fallback: Cari baris yang kelihatan seperti nama penuh (sekurang-kurangnya 2 perkataan, bukan nombor/tarikh/alamat)
+                                    nama = line.replace(/[^A-Z\s.]/g, '').trim();
+                                    console.log("Extracted Nama (fallback heuristic):", nama);
                                 }
-                            } else if (!alamat && i > linesArray.length - 5) { // Fallback: cuba 2-3 baris terakhir jika tiada label alamat
-                                let lastLines = linesArray.slice(Math.max(0, linesArray.length - 4)); // Ambil beberapa baris akhir
-                                let combinedAddress = lastLines.join(' ').toUpperCase();
-                                if (!noKpRegex.test(combinedAddress) && !dobRegex.test(combinedAddress) && !nameLabels.some(lbl => combinedAddress.includes(lbl))) {
-                                    alamat = combinedAddress.trim().replace(/\s{2,}/g, ' ');
-                                    console.log("Extracted Alamat (fallback last lines):", alamat);
+                            }
+
+                            // 3. Cari Alamat
+                            if (!alamat) {
+                                let foundLabel = false;
+                                for (const label of addressLabels) {
+                                    if (line.includes(label)) {
+                                        foundLabel = true;
+                                        let potentialAddressLines = [];
+                                        for (let j = i + 1; j < linesArray.length; j++) {
+                                            const addrLine = linesArray[j].toUpperCase();
+                                            // Berhenti jika jumpa keyword lain atau baris terlalu pendek (bukan alamat)
+                                            if (addrLine.length < 3 || noKpRegex.test(addrLine) || dobRegex.test(addrLine) || nameLabels.some(lbl => addrLine.includes(lbl))) {
+                                                break;
+                                            }
+                                            potentialAddressLines.push(addrLine);
+                                            if (potentialAddressLines.length >= 3) break; // Ambil max 3 baris
+                                        }
+                                        if (potentialAddressLines.length > 0) {
+                                            alamat = potentialAddressLines.join(', ').trim().replace(/\s{2,}/g, ' '); // Buang ruang berlebihan
+                                            console.log("Extracted Alamat (from label):", alamat);
+                                        }
+                                        break;
+                                    }
+                                }
+                                if (!foundLabel && i > linesArray.length - 5) { // Fallback: cuba 2-3 baris terakhir jika tiada label alamat
+                                    let lastLines = linesArray.slice(Math.max(0, linesArray.length - 4)); // Ambil beberapa baris akhir
+                                    let combinedAddress = lastLines.join(' ').toUpperCase();
+                                    if (!noKpRegex.test(combinedAddress) && !dobRegex.test(combinedAddress) && !nameLabels.some(lbl => combinedAddress.includes(lbl))) {
+                                        alamat = combinedAddress.trim().replace(/\s{2,}/g, ' ');
+                                        console.log("Extracted Alamat (fallback last lines):", alamat);
+                                    }
                                 }
                             }
                         }
