@@ -256,7 +256,7 @@
             background-color: #ffffff;
             padding: 1.5rem;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯彻-2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6贯-2px rgba(0, 0, 0, 0.05);
             max-width: 400px;
             width: 100%;
             text-align: center;
@@ -327,7 +327,7 @@
                     <video id="camera-stream" autoplay playsinline></video>
                     <canvas id="camera-canvas" class="hidden"></canvas> <!-- Tambah kelas hidden -->
                     <div class="scan-box">
-                        <!-- Perkataan "Sila letakkan MyKad di dalam kotak" telah dialih keluar sepenuhnya dari sini -->
+                        <!-- Kotak imbasan kini kosong daripada teks -->
                     </div>
                 </div>
                 <button class="app-button" onclick="capturePhoto();">
@@ -400,9 +400,37 @@
 
     <!-- Memuatkan pustaka Lucide Icons untuk ikon yang cantik -->
     <script src="https://unpkg.com/lucide-v0.395.0@latest/dist/umd/lucide.min.js"></script>
+    <!-- Memuatkan Tesseract.js untuk OCR -->
+    <script src='https://unpkg.com/tesseract.js@4.0.0/dist/tesseract.min.js'></script>
     <!-- Skrip JavaScript Utama Aplikasi -->
     <script>
         let cameraStream = null; // Pemboleh ubah global untuk menyimpan strim kamera
+        let ocrWorker = null; // Pemboleh ubah global untuk pekerja Tesseract.js
+
+        // Fungsi untuk menunjukkan kotak mesej kustom
+        function showMessageBox(title, message) {
+            const msgBox = document.getElementById('message-box');
+            document.getElementById('message-box-title').innerText = title;
+            document.getElementById('message-box-content').innerText = message;
+            msgBox.classList.remove('hidden'); // Paparkan kotak mesej dengan membuang kelas hidden
+            msgBox.style.display = 'flex'; // Pastikan display flex untuk centering
+        }
+
+        function hideMessageBox() {
+            const msgBox = document.getElementById('message-box'); // Dapatkan semula rujukan
+            msgBox.classList.add('hidden'); // Sembunyikan kotak mesej dengan menambah kelas hidden
+            msgBox.style.display = ''; // Clear inline style if any
+        }
+
+        function handleImageError() {
+            console.error('Image failed to load in handleImageError! This might indicate corrupt data or an invalid data URL.');
+            showMessageBox('Ralat Imej', 'Imej yang ditangkap gagal dimuatkan. Ini mungkin disebabkan oleh format imej tidak sah atau data rosak. Sila cuba tangkap gambar semula.');
+            // Pastikan placeholder kembali kelihatan jika imej gagal dimuat
+            document.getElementById('captured-image').classList.add('hidden');
+            document.getElementById('image-placeholder-text').classList.remove('hidden');
+            // Penting: Hapus onerror handler setelah dicetuskan untuk mengelakkan pencetus berganda
+            document.getElementById('captured-image').onerror = null;
+        }
 
         // --- PENTING: Lampirkan event listener setelah DOM dimuatkan ---
         document.addEventListener('DOMContentLoaded', (event) => {
@@ -572,12 +600,13 @@
         }
 
         // Fungsi untuk menangkap gambar dari strim kamera
-        function capturePhoto() {
+        async function capturePhoto() { // Menukar fungsi kepada async
             console.log("Fungsi capturePhoto() dipanggil.");
             const video = document.getElementById('camera-stream');
             const canvas = document.getElementById('camera-canvas');
             const capturedImage = document.getElementById('captured-image');
             const imagePlaceholderText = document.getElementById('image-placeholder-text');
+            const infoScreenLoader = document.getElementById('loading-spinner'); // Menggunakan spinner yang sama untuk OCR
 
             // --- Diagnostik Tambahan: Semak visibility elemen ---
             console.log('Initial capturedImage.style.display (before setting):', capturedImage.style.display);
@@ -619,36 +648,167 @@
 
                 // Semak jika imageDataUrl sah sebelum memaparkan
                 if (imageDataUrl && imageDataUrl.length > 100) { // Jika panjang data URL lebih dari 100, kemungkinan ia imej yang sah
-                    // Clear previous handlers to prevent stale references
-                    capturedImage.onload = null;
-                    capturedImage.onerror = null;
-
-                    // Set onload and onerror handlers before setting src
-                    capturedImage.onload = () => {
-                        capturedImage.classList.remove('hidden'); // Paparkan elemen imej
-                        capturedImage.style.display = 'block'; // Ensure it's explicitly block for visibility
-                        imagePlaceholderText.classList.add('hidden'); // Sembunyikan teks placeholder
-                        console.log("Captured image ONLOAD. Display changed to block.");
-                        console.log("Current capturedImage.style.display (after onload):", capturedImage.style.display);
-                        console.log(`Captured image natural dimensions: ${capturedImage.naturalWidth}x${capturedImage.naturalHeight}`);
-                        // Penting: Alih keluar onload handler setelah ia dicetuskan
-                        capturedImage.onload = null;
-                        capturedImage.onerror = null; // Juga alih keluar onerror
-                    };
-                    capturedImage.onerror = () => {
-                        handleImageError();
-                        // Penting: Alih keluar onerror handler setelah ia dicetuskan
-                        capturedImage.onload = null;
-                        capturedImage.onerror = null;
-                    };
-
+                    // Paparkan imej yang ditangkap pada skrin maklumat
                     capturedImage.src = imageDataUrl;
+                    capturedImage.classList.remove('hidden'); // Paparkan elemen imej
+                    capturedImage.style.display = 'block'; // Ensure it's explicitly block for visibility
+                    imagePlaceholderText.classList.add('hidden'); // Sembunyikan teks placeholder
                     console.log("Captured image src set. Waiting for image to load before displaying...");
+                    console.log("Current capturedImage.style.display:", capturedImage.style.display);
 
-                    // Jika imej sudah dimuat (mungkin cached data URL), pastikan onload dipanggil
-                    if (capturedImage.complete) {
-                        console.log("Image already complete, triggering onload manually.");
-                        capturedImage.onload();
+                    // Tambah event listener untuk memastikan imej dimuatkan sebelum meneruskan OCR
+                    const imageLoadPromise = new Promise((resolve, reject) => {
+                        capturedImage.onload = () => {
+                            console.log("Captured image ONLOAD. Display changed to block.");
+                            console.log(`Captured image natural dimensions: ${capturedImage.naturalWidth}x${capturedImage.naturalHeight}`);
+                            capturedImage.onload = null; // Clean up handler
+                            capturedImage.onerror = null; // Clean up handler
+                            resolve();
+                        };
+                        capturedImage.onerror = () => {
+                            handleImageError();
+                            capturedImage.onload = null; // Clean up handler
+                            capturedImage.onerror = null; // Clean up handler
+                            reject(new Error("Gagal memuatkan imej yang ditangkap."));
+                        };
+                        if (capturedImage.complete) { // Handle cached or already loaded images
+                            console.log("Image already complete, triggering onload manually.");
+                            capturedImage.onload();
+                        }
+                    });
+
+                    // Navigasi ke skrin maklumat SEBELUM memulakan OCR (untuk UX)
+                    navigateTo('info-screen');
+                    console.log("Navigated to info-screen. Starting OCR process...");
+
+                    infoScreenLoader.classList.remove('hidden'); // Paparkan spinner OCR
+                    showMessageBox('Memproses MyKad', 'Sedang mengecam maklumat MyKad, sila tunggu...'); // Maklumkan pengguna
+
+                    try {
+                        // Tunggu imej dimuatkan sepenuhnya ke dalam elemen <img>
+                        await imageLoadPromise;
+
+                        // --- Lakukan OCR menggunakan Tesseract.js ---
+                        if (!ocrWorker) {
+                            console.log("Creating new Tesseract.js worker...");
+                            ocrWorker = await Tesseract.createWorker('eng'); // Memuatkan bahasa Inggeris
+                            console.log("Tesseract.js worker created and language loaded.");
+                        }
+
+                        console.log("Performing OCR recognition...");
+                        const { data: { text, lines } } = await ocrWorker.recognize(canvas.toDataURL('image/png')); // Gunakan data dari canvas
+                        console.log("OCR recognition complete. Full text:", text);
+
+                        // --- Ekstrak Maklumat MyKad ---
+                        let noKp = '';
+                        let nama = '';
+                        let tarikhLahir = '';
+                        let alamat = '';
+
+                        const linesArray = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+                        console.log("OCR lines array:", linesArray);
+
+                        // Pola Regex untuk mengekstrak maklumat (perlu disesuaikan untuk ketepatan MyKad sebenar)
+                        const noKpRegex = /(\d{6}[ -]\d{2}[ -]\d{4})/; // Contoh: 701031-05-5277
+                        const dobRegex = /(\d{2}[/\-]\d{2}[/\-]\d{4}|\d{2}\s+(JAN|FEB|MAC|APR|MEI|JUN|JUL|OGO|SEP|OKT|NOV|DIS)\s+\d{4})/; // Contoh: 31/10/1970 atau 31 OKT 1970
+                        const nameKeyword = ["NAMA", "NAME"];
+                        const addressKeyword = ["ALAMAT", "ADDRESS"];
+
+
+                        // Loop melalui baris untuk mencari maklumat
+                        let foundNameLine = false;
+                        let foundAddressStart = false;
+                        for (let i = 0; i < linesArray.length; i++) {
+                            const line = linesArray[i].toUpperCase();
+
+                            // Cari No. KP
+                            if (!noKp && noKpRegex.test(line)) {
+                                const match = line.match(noKpRegex);
+                                if (match && match[1]) {
+                                    noKp = match[1].replace(/ /g, '-'); // Gantikan ruang dengan dash jika ada
+                                    console.log("Extracted No. KP:", noKp);
+                                    continue; // Pindah ke baris seterusnya
+                                }
+                            }
+
+                            // Cari Tarikh Lahir
+                            if (!tarikhLahir && dobRegex.test(line)) {
+                                const match = line.match(dobRegex);
+                                if (match && match[1]) {
+                                    tarikhLahir = match[1];
+                                    console.log("Extracted Tarikh Lahir:", tarikhLahir);
+                                    continue;
+                                }
+                            }
+
+                            // Cari Nama (lebih sukar, mungkin baris selepas KP atau baris yang jelas bukan KP/DOB/Alamat)
+                            // Ini adalah heuristik mudah, mungkin perlu disesuaikan
+                            if (noKp && !foundNameLine) { // Jika KP sudah dijumpai, baris seterusnya mungkin nama
+                                // Cuba anggap baris selepas no. KP adalah nama, selagi ia bukan nombor atau tarikh
+                                if (!noKpRegex.test(line) && !dobRegex.test(line) && !addressKeyword.some(kw => line.includes(kw))) {
+                                    if (line.length > 3 && !/^\d+$/.test(line)) { // Pastikan bukan nombor sahaja
+                                        if (!nama) { // Hanya ambil nama pertama yang kelihatan sah
+                                            nama = line.replace(/[^A-Z\s]/g, '').trim(); // Buang karakter bukan huruf/ruang
+                                            console.log("Attempted Name extraction (heuristic):", nama);
+                                            foundNameLine = true;
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+
+
+                            // Cari Alamat (juga sukar, mungkin baris selepas keyword alamat)
+                            if (addressKeyword.some(kw => line.includes(kw))) {
+                                foundAddressStart = true;
+                                alamat = linesArray.slice(i + 1, i + 4).join(', ').trim(); // Ambil 3 baris selepas keyword
+                                console.log("Attempted Address extraction (from keyword):", alamat);
+                                continue;
+                            }
+                            if (!alamat && foundAddressStart && line.length > 5) { // Jika sudah lepas keyword, terus kumpul
+                                // Ini adalah fallback jika keyword tidak jelas.
+                                // Untuk alamat, mungkin lebih baik menggunakan layout data dari Tesseract.js jika ia ada
+                                // Atau hanya ambil baris-baris akhir
+                            }
+                        }
+
+                        // Jika nama tidak diekstrak secara heuristik, cuba cari baris yang kelihatan seperti nama
+                        if (!nama && linesArray.length > 1) {
+                           // Cuba ambil baris yang kelihatan seperti nama penuh (huruf besar, lebih daripada satu perkataan)
+                           for (let i = 0; i < linesArray.length; i++) {
+                               const line = linesArray[i].toUpperCase();
+                               if (line.length > 5 && line.split(' ').length > 1 && !noKpRegex.test(line) && !dobRegex.test(line) && !addressKeyword.some(kw => line.includes(kw))) {
+                                    nama = line.replace(/[^A-Z\s]/g, '').trim();
+                                    console.log("Fallback Name extraction:", nama);
+                                    break;
+                               }
+                           }
+                        }
+
+                        // Jika alamat tidak diekstrak, cuba ambil beberapa baris terakhir (sangat kasar)
+                        if (!alamat && linesArray.length > 3) {
+                            alamat = linesArray.slice(linesArray.length - Math.min(3, linesArray.length - 1)).join(', ').trim();
+                            console.log("Fallback Address extraction (last lines):", alamat);
+                        }
+
+
+                        // Isi medan input dengan data yang diekstrak
+                        document.getElementById('no_kp').value = noKp || 'Tidak Ditemui';
+                        document.getElementById('nama').value = nama || 'Tidak Ditemui';
+                        document.getElementById('tarikh_lahir').value = tarikhLahir || 'Tidak Ditemui';
+                        document.getElementById('alamat').value = alamat || 'Tidak Ditemui';
+
+                    } catch (ocrErr) {
+                        console.error("Ralat OCR:", ocrErr);
+                        showMessageBox('Ralat OCR', 'Gagal mengecam maklumat MyKad. Pastikan pencahayaan cukup dan gambar jelas. Sila cuba lagi.');
+                        // Tetapkan nilai kepada 'Gagal' jika OCR ralat
+                        document.getElementById('no_kp').value = 'Gagal OCR';
+                        document.getElementById('nama').value = 'Gagal OCR';
+                        document.getElementById('tarikh_lahir').value = 'Gagal OCR';
+                        document.getElementById('alamat').value = 'Gagal OCR';
+                    } finally {
+                        infoScreenLoader.classList.add('hidden'); // Sembunyikan spinner
+                        hideMessageBox(); // Sembunyikan kotak mesej memproses
                     }
 
                 } else {
@@ -656,17 +816,12 @@
                     showMessageBox("Ralat Tangkapan Imej", "Gagal menangkap imej. Imej yang ditangkap kosong atau tidak sah.");
                     // Kekalkan placeholder kelihatan jika tangkapan imej gagal
                     capturedImage.classList.add('hidden'); // Pastikan imej tersembunyi
-                    imagePlaceholderText.classList.remove('hidden'); // Paparkan placeholder
+                    document.getElementById('image-placeholder-text').classList.remove('hidden'); // Paparkan placeholder
                 }
 
-                // Simulasi data MyKad (masih menggunakan data keras buat masa ini)
-                document.getElementById('no_kp').value = '701031-05-5277';
-                document.getElementById('nama').value = 'MOHD ASRI BIN M.JAMIL';
-                document.getElementById('tarikh_lahir').value = '31/10/1970';
-                document.getElementById('alamat').value = 'NO. 29, JALAN BELIDA 16, TAMAN BUKIT CHEDANG, 70300 SEREMBAN, NEGERI SEMBILAN';
-
-                navigateTo('info-screen'); // Navigasi ke skrin maklumat
-                console.log("Simulated MyKad data filled and navigated to info screen.");
+                // Setelah OCR atau jika ada ralat, navigasi ke info-screen
+                // navigateTo('info-screen'); // Sudah dinavigasi lebih awal
+                console.log("OCR process completed or failed. Simulated/Extracted MyKad data filled.");
             } else {
                 showMessageBox("Kamera Tidak Sedia", "Kamera belum bersedia untuk menangkap gambar. Sila pastikan strim video kelihatan dan cuba lagi.");
                 console.error("Gagal menangkap gambar: video.readyState bukan HAVE_ENOUGH_DATA. Current state:", video.readyState);
@@ -708,7 +863,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = response.json();
+                const result = await response.json(); // Gunakan await di sini
 
                 if (result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
