@@ -428,9 +428,10 @@
             // Sembunyikan ringkasan dan spinner apabila bertukar skrin
             document.getElementById('summary-output').classList.add('hidden');
             document.getElementById('loading-spinner').classList.add('hidden'); // Guna class hidden
-            // Kosongkan dan sembunyikan imej yang ditangkap
-            document.getElementById('captured-image').src = '';
-            document.getElementById('captured-image').classList.add('hidden'); // Guna class hidden
+            // Kosongkan dan sembunyikan imej yang ditangkap, gunakan GIF telus untuk mengelakkan ralat src
+            const capturedImage = document.getElementById('captured-image');
+            capturedImage.src = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; // Set to a transparent GIF
+            capturedImage.classList.add('hidden'); // Guna class hidden
             document.getElementById('image-placeholder-text').classList.remove('hidden'); // Guna class hidden
         }
 
