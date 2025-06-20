@@ -448,22 +448,22 @@
                 let stream = null;
                 let usedFacingMode = 'none';
 
-                // Cuba secara langsung untuk kamera depan
+                // Cuba secara langsung untuk kamera belakang (environment)
                 try {
-                    console.log("Mencuba 'user' facingMode (kamera depan)...");
-                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-                    usedFacingMode = 'user';
-                    console.log("Strim kamera diperolehi dengan 'user' facingMode (kamera depan).");
+                    console.log("Mencuba 'environment' facingMode (kamera belakang)...");
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    usedFacingMode = 'environment';
+                    console.log("Strim kamera diperolehi dengan 'environment' facingMode (kamera belakang).");
                 } catch (e) {
-                    console.warn("Akses kamera depan gagal, mencuba 'environment' facingMode (kamera belakang):", e);
+                    console.warn("Akses kamera belakang gagal, mencuba 'user' facingMode (kamera depan):", e);
                     try {
-                        // Jika kamera depan gagal, cuba 'environment' facingMode (kamera belakang)
-                        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                        usedFacingMode = 'environment';
-                        console.log("Strim kamera diperolehi dengan 'environment' facingMode (kamera belakang).");
+                        // Jika kamera belakang gagal, cuba 'user' facingMode (kamera depan)
+                        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                        usedFacingMode = 'user';
+                        console.log("Strim kamera diperolehi dengan 'user' facingMode (kamera depan).");
                     } catch (e2) {
                         // Jika kedua-duanya gagal, cuba tetapan generik (mungkin lalai kepada kamera depan jika tiada pilihan lain)
-                        console.warn("Akses kamera belakang juga gagal, mencuba tetapan kamera generik:", e2);
+                        console.warn("Akses kamera depan juga gagal, mencuba tetapan kamera generik:", e2);
                         stream = await navigator.mediaDevices.getUserMedia({ video: true });
                         usedFacingMode = 'generic';
                         console.log("Strim kamera diperolehi dengan tetapan generik.");
@@ -482,14 +482,24 @@
                     video.play();
                     console.log(`Video telah mula dimainkan. Menggunakan kamera: ${usedFacingMode}`);
                     console.log(`Resolusi video: ${video.videoWidth}x${video.videoHeight}`);
-                    // Tiada transform: scaleX(-1) untuk kamera depan atau belakang secara spesifik
-                    // Membiarkan pelayar menguruskan pembalikan cermin secara lalai jika sesuai
+                    // Hanya terapkan transformasi cermin jika kamera depan digunakan
+                    if (usedFacingMode === 'user') {
+                        video.style.transform = 'scaleX(-1)';
+                        console.log("Transformasi cermin diterapkan untuk kamera depan.");
+                    } else {
+                        video.style.transform = 'none'; // Pastikan tiada pembalikan cermin
+                    }
                 };
                 // Jika video sudah dimuat, mainkan terus
                 if (video.readyState >= video.HAVE_CURRENT_DATA) {
                     video.play();
                     console.log(`Video sudah sedia, telah dimainkan. Menggunakan kamera: ${usedFacingMode}`);
                     console.log(`Resolusi video: ${video.videoWidth}x${video.videoHeight}`);
+                     if (usedFacingMode === 'user') {
+                        video.style.transform = 'scaleX(-1)';
+                    } else {
+                        video.style.transform = 'none';
+                    }
                 }
 
             } catch (err) {
