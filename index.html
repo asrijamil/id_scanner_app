@@ -89,16 +89,16 @@
 
         /* Gaya untuk skrin */
         .screen {
-            /* display: none; */ /* Dikeluarkan, akan diuruskan oleh kelas hidden Tailwind */
             width: 100%;
             height: 100%;
             flex-direction: column;
             justify-content: space-between;
             align-items: center;
+            display: none; /* Semua skrin tersembunyi secara lalai */
         }
         /* Tailwind's 'hidden' class will override 'display: flex' for other screens */
         #welcome-screen {
-            display: flex; /* Display welcome screen initially */
+            display: flex; /* Paparkan skrin selamat datang pada mulanya */
         }
         #camera-screen .camera-container {
             width: 100%;
@@ -407,8 +407,7 @@
             console.log(`Navigasi dipanggil ke: ${screenId}`);
             document.querySelectorAll('.screen').forEach(screen => {
                 screen.classList.add('hidden'); // Sembunyikan semua skrin
-                // Perhatian: Mengalih keluar style.display manual di sini untuk mengelakkan konflik dengan Tailwind hidden
-                // screen.style.display = 'none'; 
+                screen.style.display = 'none'; // Tambahan: Pastikan inline display none
                 console.log(`Menyembunyikan: ${screen.id}`);
             });
             const targetScreen = document.getElementById(screenId);
@@ -654,7 +653,7 @@
                     body: JSON.stringify(payload)
                 });
 
-                const result = response.json();
+                const result = await response.json();
 
                 if (result.candidates && result.candidates.length > 0 &&
                     result.candidates[0].content && result.candidates[0].content.parts &&
