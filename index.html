@@ -137,23 +137,25 @@
             border-radius: 0.5rem;
             pointer-events: none; /* Membolehkan klik melalui kotak untuk video */
             overflow: hidden; /* Penting untuk padding-bottom hack */
-            display: flex; /* Untuk memusatkan teks di dalamnya */
-            justify-content: center;
-            align-items: center;
+            /* Removed flex properties here as text is removed */
+            /* display: flex; */
+            /* justify-content: center; */
+            /* align-items: center; */
             z-index: 10; /* Pastikan ia di atas video */
         }
-        #camera-screen .scan-box span.scan-box-text { /* Gaya untuk teks yang dipusatkan di dalam scan-box */
-            white-space: normal; /* Benarkan teks membalut */
-            text-align: center; /* Pusatkan teks */
-            color: #ffffff; /* Warna teks untuk kelihatan pada video */
-            font-size: 1.15rem; /* Saiz fon yang sedikit lebih kecil */
+        /* Removed all span.scan-box-text styles as the span is removed */
+        /* #camera-screen .scan-box span.scan-box-text {
+            white-space: normal;
+            text-align: center;
+            color: #ffffff;
+            font-size: 1.15rem;
             font-weight: bold;
-            background-color: rgba(0, 0, 0, 0.6); /* Latar belakang separa telus yang lebih gelap untuk keterlihatan */
+            background-color: rgba(0, 0, 0, 0.6);
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
-            width: 90%; /* Benarkan teks menggunakan kebanyakan lebar kotak imbasan */
-            box-sizing: border-box; /* Sertakan padding dalam lebar */
-        }
+            width: 90%;
+            box-sizing: border-box;
+        } */
 
 
         #info-screen .input-group {
